@@ -213,7 +213,8 @@ def main():
     global legislature
     legislature = args.legislature
 
-    logging.basicConfig(level=(logging.INFO if args.verbose else logging.WARNING), stream=stdout)
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO, stream=stdout)
 
     global organes
     organes = get_references_organes()
