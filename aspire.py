@@ -155,6 +155,16 @@ class Context:
             Timer(3600, setattr, args=(self, 'need_textes_ordre_du_jour', True)).start()
         return
 
+    def next_task(self):
+        if self.urgent_task is not None:
+            task = self.urgent_task
+            self.urgent_task = None
+        elif self.tasks:
+            task = self.tasks.pop(0)
+        else:
+            task = None
+        return task
+
 class Task(partial):
     def __new__(cls, function, **kwargs):
         """
@@ -193,12 +203,7 @@ def harvest_organe(organe):
             context.get_textes_ordre_du_jour()
             continue
 
-        if (task := context.urgent_task) is not None:
-            context.urgent_task = None
-        elif context.tasks:
-            task = context.tasks.pop(0)
-
-        if task is not None:
+        if (task := context.next_task()) is not None:
             task()
             continue
 
