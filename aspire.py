@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from sys import stdout
+from threading import Thread, Timer
 from time import sleep
 
 import requests
@@ -203,7 +204,6 @@ def main():
     parser.add_argument('-l', '--legislature', default=16, help='target legislature number')
     # chambres considérées
     # organes considérés (inclure les commissions ou juste la séance plénière)
-    # threading ?
     # loop request prochain_a_discuter
     args = parser.parse_args()
 
@@ -219,8 +219,15 @@ def main():
     global organes
     organes = get_references_organes()
 
-    for organe in organes:
-        harvest_organe(organe)
+    threads = [Thread(target=harvest_organe, args=(organe,), daemon=True) for organe in organes]
+    for thread in threads:
+        thread.start()
+    while threads:
+        # allows for a KeybaordInterrupt to kill every thread at once
+        thread.join(1)
+        if not thread.is_alive():
+            threads.remove(thread)
+            thread = threads[0]
 
 
 def write_json(data, filepath):
