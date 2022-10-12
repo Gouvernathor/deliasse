@@ -14,6 +14,7 @@ import requests
 log = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 target_dir = None
 legislature = None
+refresh = None
 context_by_organe = {}
 
 
@@ -94,7 +95,11 @@ class Context:
                                                                    for resume_amdt in data['amendements']}
         self.add_task(self.get_amendments, bibard=bibard, bibard_suffixe=bibard_suffixe, numeros=numeros, full=True)
 
-        # TODO : Re-call self.get_discussion dans 900 pour check en boucle
+        if refresh:
+            Timer(900, self.add_task, kwargs=dict(function=self.get_discussion,
+                                                  bibard=bibard,
+                                                  bibard_suffixe=bibard_suffixe,
+                                                  )).start()
         return
 
     def get_prochain_a_discuter(self):
@@ -122,7 +127,8 @@ class Context:
                                                 numeros=list(numeros_unsorted)+numeros[index:index+2],
                                                 ) # TODO check ce +2
 
-        # TODO : Re-set need_prochain_a_discuter dans 2 pour check en boucle
+        if refresh:
+            Timer(2, setattr, args=(self, 'need_prochain_a_discuter', True)).start()
         return
 
     def get_textes_ordre_du_jour(self):
@@ -145,7 +151,8 @@ class Context:
                           bibard_suffixe=discussion['textBibardSuffixe'],
                           )
 
-        # TODO : Re-set need_textes_ordre_du_jour dans 3600 pour check en boucle
+        if refresh:
+            Timer(3600, setattr, args=(self, 'need_textes_ordre_du_jour', True)).start()
         return
 
 class Task:
@@ -193,8 +200,10 @@ def harvest_organe(organe):
             task.function(**task.kwargs)
             continue
 
-        break
-        sleep(1)
+        if refresh:
+            sleep(1)
+        else:
+            break
 
 
 def main():
@@ -202,9 +211,9 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose mode')
     parser.add_argument('-t', '--target_dir', default='./out', help='target directory to write JSON files')
     parser.add_argument('-l', '--legislature', default=16, help='target legislature number')
+    parser.add_argument('-r', '--refresh', action='store_true', default=False, help='refresh the data in a loop')
     # chambres considérées
     # organes considérés (inclure les commissions ou juste la séance plénière)
-    # loop request prochain_a_discuter
     args = parser.parse_args()
 
     global target_dir
@@ -216,6 +225,9 @@ def main():
     if args.verbose:
         logging.basicConfig(level=logging.INFO, stream=stdout)
 
+    global refresh
+    refresh = args.refresh
+
     global organes
     organes = get_references_organes()
 
@@ -223,7 +235,7 @@ def main():
     for thread in threads:
         thread.start()
     while threads:
-        # allows for a KeybaordInterrupt to kill every thread at once
+        # allows for a KeybaordInterrupt to kill every thread at once (along with the daemon thing)
         thread.join(1)
         if not thread.is_alive():
             threads.remove(thread)
