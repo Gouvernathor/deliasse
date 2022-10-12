@@ -1,6 +1,7 @@
 # Rework from Deliasse-Demons, by Paula Forteza & Emmanuel Raviart
 
 import argparse
+from functools import partial
 import json
 import logging
 import os
@@ -154,16 +155,18 @@ class Context:
             Timer(3600, setattr, args=(self, 'need_textes_ordre_du_jour', True)).start()
         return
 
-class Task:
-    def __init__(self, function, **kwargs):
-        self.function = function
-        self.kwargs = kwargs
+class Task(partial):
+    def __new__(cls, function, **kwargs):
+        """
+        Allows `function` to be passed by kwarg, and disallows positional args.
+        """
+        return super().__new__(cls, function, **kwargs)
 
     def __eq__(self, other):
         if type(self) != type(other):
             return False
 
-        return self.function == other.function and self.kwargs == other.kwargs
+        return self.func == other.func and self.keywords == other.keywords
 
 
 def get_references_organes():
@@ -196,7 +199,7 @@ def harvest_organe(organe):
             task = context.tasks.pop(0)
 
         if task is not None:
-            task.function(**task.kwargs)
+            task()
             continue
 
         if refresh:
