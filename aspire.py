@@ -22,12 +22,11 @@ class Context:
     def __init__(self, organe):
         self.need_prochain_a_discuter = True
         self.need_textes_ordre_du_jour = True
-        self.numeros_by_bibard_suffixed = {}
+        self.numeros_by_bibard_suffixed = {} # dict de bibard vers liste de numeros
         self.organe = organe
-        self.sort_by_numeros_by_bibard_suffixed = {} # voir pour en faire un dict de tuple vers sort
-        # plutot qu'un dict de bibard vers dict de numero vers sort
-        self.tasks = []
-        self.urgent_task = None
+        self.sort_by_numeros_by_bibard_suffixed = {} # dict de bibard vers dict de numero vers sort
+        self.urgent_task = None # Task à appeler avant les tasks
+        self.tasks = [] # Tasks à appeler par la suite
 
     def add_task(self, *args, **kwargs):
         task = Task(*args, **kwargs)
@@ -118,7 +117,7 @@ class Context:
                 if (numero_a_discuter := data['numAmdt']) in numeros:
                     index = numeros.index(numero_a_discuter)
                     numeros_unsorted = set(numeros[:index])\
-                                    - set(self.sort_by_numeros_by_bibard_suffixed[bibard_suffixed])
+                                       - set(self.sort_by_numeros_by_bibard_suffixed[bibard_suffixed])
                     if numeros_unsorted:
                         self.urgent_task = Task(function=self.get_amendments,
                                                 bibard=data['bibard'],
