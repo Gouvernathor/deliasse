@@ -219,8 +219,10 @@ def main():
     parser.add_argument('-t', '--target_dir', default='./out', help='target directory to write JSON files')
     parser.add_argument('-l', '--legislature', default=16, help='target legislature number')
     parser.add_argument('-r', '--refresh', action='store_true', default=False, help='refresh the data in a loop')
+    parser.add_argument('-o', '--organe', default=None, help='sets one assembly to query, '
+                                                             'whether a commission or AN for the whole '
+                                                             'assembly (all, if not provided)')
     # chambres considérées
-    # organes considérés (inclure les commissions ou juste la séance plénière)
     args = parser.parse_args()
 
     global target_dir
@@ -238,6 +240,10 @@ def main():
     global organes
     organes = get_references_organes()
 
+    if (organe := args.organe) is not None:
+        if organe not in organes:
+            raise ValueError(f'Organe {organe} not found in {organes}')
+        organes = {organe: organes[organe]}
     threads = [Thread(target=harvest_organe, args=(organe,), daemon=True) for organe in organes]
     for thread in threads:
         thread.start()
