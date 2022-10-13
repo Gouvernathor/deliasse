@@ -242,11 +242,12 @@ def main():
     for thread in threads:
         thread.start()
     while threads:
-        # allows for a KeybaordInterrupt to kill every thread at once (along with the daemon thing)
+        # allows for a KeyboardInterrupt to kill every thread at once (along with the daemon thing)
         thread.join(1)
         if not thread.is_alive():
             threads.remove(thread)
-            thread = threads[0]
+            if threads:
+                thread = threads[0]
 
 
 def write_json(data, filepath):
