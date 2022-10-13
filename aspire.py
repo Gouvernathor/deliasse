@@ -196,7 +196,7 @@ def harvest_organe(organe):
     log.info(f'harvest_organe({organe})')
     context = context_by_organe[organe] = Context(organe)
 
-    while True: # revisit
+    while True:
         if context.need_prochain_a_discuter:
             context.need_prochain_a_discuter = False
             context.get_prochain_a_discuter()
@@ -248,7 +248,7 @@ def main():
         ar_organes = (org.strip() for org in args.organes.split(','))
         try:
             organes = {org: organes[org] for org in ar_organes}
-        except KeyError as e:
+        except KeyError:
             raise ValueError(f'Organe(s) {set(ar_organes)-set(organes)} not found among {organes}')
         del ar_organes
 
