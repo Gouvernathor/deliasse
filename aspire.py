@@ -18,6 +18,10 @@ legislature = None
 refresh = None
 context_by_organe = {}
 
+timer_period = dict(discussion=900,
+                    prochain=2,
+                    odj=3600,
+                    )
 
 class Context:
     def __init__(self, organe):
@@ -96,10 +100,10 @@ class Context:
         self.add_task(self.get_amendments, bibard=bibard, bibard_suffixe=bibard_suffixe, numeros=numeros, full=True)
 
         if refresh:
-            Timer(900, self.add_task, kwargs=dict(function=self.get_discussion,
-                                                  bibard=bibard,
-                                                  bibard_suffixe=bibard_suffixe,
-                                                  )).start()
+            Timer(timer_period['discussion'], self.add_task, kwargs=dict(function=self.get_discussion,
+                                                                         bibard=bibard,
+                                                                         bibard_suffixe=bibard_suffixe,
+                                                                         )).start()
         return
 
     def get_prochain_a_discuter(self):
@@ -128,7 +132,7 @@ class Context:
                                                 ) # TODO check ce +2
 
         if refresh:
-            Timer(2, setattr, args=(self, 'need_prochain_a_discuter', True)).start()
+            Timer(timer_period['prochain'], setattr, args=(self, 'need_prochain_a_discuter', True)).start()
         return
 
     def get_textes_ordre_du_jour(self):
@@ -152,7 +156,7 @@ class Context:
                           )
 
         if refresh:
-            Timer(3600, setattr, args=(self, 'need_textes_ordre_du_jour', True)).start()
+            Timer(timer_period['odj'], setattr, args=(self, 'need_textes_ordre_du_jour', True)).start()
         return
 
     def next_task(self):
