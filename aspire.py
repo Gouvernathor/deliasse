@@ -219,9 +219,9 @@ def main():
     parser.add_argument('-t', '--target_dir', default='./out', help='target directory to write JSON files')
     parser.add_argument('-l', '--legislature', default=16, help='target legislature number')
     parser.add_argument('-r', '--refresh', action='store_true', default=False, help='refresh the data in a loop')
-    parser.add_argument('-o', '--organe', default=None, help='sets one assembly to query, '
-                                                             'whether a commission or AN for the whole '
-                                                             'assembly (all, if not provided)')
+    parser.add_argument('-o', '--organes', default=None, help='a comma-saparated list of organes to query, '
+                                                              'whether a commission or AN for the whole '
+                                                              'assembly (all, if not provided)')
     # chambres considérées
     args = parser.parse_args()
 
@@ -240,10 +240,14 @@ def main():
     global organes
     organes = get_references_organes()
 
-    if (organe := args.organe) is not None:
-        if organe not in organes:
-            raise ValueError(f'Organe {organe} not found in {organes}')
-        organes = {organe: organes[organe]}
+    if args.organes is not None:
+        ar_organes = (org.strip() for org in args.organes.split(','))
+        try:
+            organes = {org: organes[org] for org in ar_organes}
+        except KeyError as e:
+            raise ValueError(f'Organe(s) {set(ar_organes)-set(organes)} not found among {organes}')
+        del ar_organes
+
     threads = [Thread(target=harvest_organe, args=(organe,), daemon=True) for organe in organes]
     for thread in threads:
         thread.start()
