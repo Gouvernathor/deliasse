@@ -169,6 +169,22 @@ class Context:
             task = None
         return task
 
+    def advance(self):
+        while True:
+            if self.need_prochain_a_discuter:
+                self.need_prochain_a_discuter = False
+                self.get_prochain_a_discuter()
+
+            elif self.need_textes_ordre_du_jour:
+                self.need_textes_ordre_du_jour = False
+                self.get_textes_ordre_du_jour()
+
+            elif (task := self.next_task()) is not None:
+                task()
+
+            else:
+                yield
+
 class Task(partial):
     def __new__(cls, function, **kwargs):
         """
@@ -196,21 +212,7 @@ def harvest_organe(organe):
     log.info(f'harvest_organe({organe})')
     context = context_by_organe[organe] = Context(organe)
 
-    while True:
-        if context.need_prochain_a_discuter:
-            context.need_prochain_a_discuter = False
-            context.get_prochain_a_discuter()
-            continue
-
-        if context.need_textes_ordre_du_jour:
-            context.need_textes_ordre_du_jour = False
-            context.get_textes_ordre_du_jour()
-            continue
-
-        if (task := context.next_task()) is not None:
-            task()
-            continue
-
+    for _done in context.advance():
         if refresh:
             sleep(1)
         else:
