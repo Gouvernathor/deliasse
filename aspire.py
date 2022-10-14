@@ -13,9 +13,10 @@ import requests
 
 
 log = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
-target_dir = None
-legislature = None
-refresh = None
+target_dir = './out'
+legislature = 16
+refresh = False
+organes = None
 context_by_organe = {}
 
 timer_period = dict(discussion=900,
@@ -114,7 +115,7 @@ class Context:
         assert tuple(data.keys()) == ('prochainADiscuter',)
         data = data['prochainADiscuter']
         write_json(data,
-                os.path.join(target_dir, f'assemblee{legislature}', self.organe, 'prochain_a_discuter.json'))
+                   os.path.join(target_dir, f'assemblee{legislature}', self.organe, 'prochain_a_discuter.json'))
 
         if int(data['legislature']) == legislature:
             bibard_suffixed = data['bibard'] + data['bibardSuffixe']
@@ -219,41 +220,45 @@ def harvest_organe(organe):
             break
 
 
-def main():
+def _main():
+    """
+    Should not be called from outside the module.
+    Takes the command-line parameters and applies them as globals.
+    """
+    global target_dir, legislature, refresh
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose mode')
-    parser.add_argument('-t', '--target_dir', default='./out', help='target directory to write JSON files')
-    parser.add_argument('-l', '--legislature', default=16, help='target legislature number')
-    parser.add_argument('-r', '--refresh', action='store_true', default=False, help='refresh the data in a loop')
+    parser.add_argument('-t', '--target_dir', default=target_dir, help='target directory to write JSON files')
+    parser.add_argument('-l', '--legislature', default=legislature, help='target legislature number')
+    parser.add_argument('-r', '--refresh', action='store_true', default=refresh, help='refresh the data in a loop')
     parser.add_argument('-o', '--organes', default=None, help='a comma-saparated list of organes to query, '
                                                               'whether a commission or AN for the whole '
                                                               'assembly (all, if not provided)')
     # chambres considérées
     args = parser.parse_args()
 
-    global target_dir
     target_dir = args.target_dir
 
-    global legislature
-    legislature = args.legislature
+    if args.legislature is not None:
+        legislature = args.legislature
 
     if args.verbose:
         logging.basicConfig(level=logging.INFO, stream=stdout)
 
-    global refresh
     refresh = args.refresh
 
     global organes
     organes = get_references_organes()
 
     if args.organes is not None:
-        ar_organes = (org.strip() for org in args.organes.split(','))
+        ar_organes = args.organes.split(',')
         try:
             organes = {org: organes[org] for org in ar_organes}
         except KeyError:
             raise ValueError(f'Organe(s) {set(ar_organes)-set(organes)} not found among {organes}')
-        del ar_organes
 
+def run():
     threads = [Thread(target=harvest_organe, args=(organe,), daemon=True) for organe in organes]
     for thread in threads:
         thread.start()
@@ -285,4 +290,5 @@ def write_json(data, filepath):
 
 
 if __name__ == "__main__":
-    main()
+    _main()
+    run()
