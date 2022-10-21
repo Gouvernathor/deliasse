@@ -248,17 +248,19 @@ def _main():
 
     refresh = args.refresh
 
-    global organes
-    organes = get_references_organes()
-
     if args.organes is not None:
         ar_organes = args.organes.split(',')
+        global organes
         try:
             organes = {org: organes[org] for org in ar_organes}
         except KeyError:
             raise ValueError(f'Organe(s) {set(ar_organes)-set(organes)} not found among {organes}')
 
 def run():
+    """
+    Launches the harvesting process.
+    The `organes` global variable should be set before calling this function.
+    """
     threads = [Thread(target=harvest_organe, args=(organe,), daemon=True) for organe in organes]
     for thread in threads:
         thread.start()
@@ -287,6 +289,11 @@ def write_json(data, filepath):
     with open(filepath, 'w', encoding='utf-8') as json_file:
         json_file.write(new_text)
     return True
+
+try:
+    organes = get_references_organes()
+except Exception:
+    pass
 
 
 if __name__ == "__main__":
