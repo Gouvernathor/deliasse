@@ -110,7 +110,8 @@ class Context:
     def get_prochain_a_discuter(self):
         log.info('get_prochain_a_discuter(organe={})'.format(self.organe))
         data = requests.get('http://eliasse.assemblee-nationale.fr/eliasse/prochainADiscuter.do',
-                            cookies=dict(FOCUSED_ORGANE=self.organe),
+                            cookies=dict(FOSUSED_ORGANE=self.organe),
+                            params=dict(organeAbrv=self.organe),
                             ).json()
         assert tuple(data.keys()) == ('prochainADiscuter',)
         data = data['prochainADiscuter']
